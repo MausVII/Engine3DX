@@ -14,9 +14,12 @@ public:
 			WheelUp,
 			WheelDown,
 			Move, 
+			Enter,
+			Leave,
 			Invalid
 		};
 	private:
+		// Get a "Screenshot" for each event
 		Type type;
 		bool leftIsPressed;
 		bool rightIsPressed;
@@ -56,8 +59,10 @@ public:
 	Mouse() = default;
 	Mouse(const Mouse&) = delete;
 	Mouse& operator=(const Mouse&) = delete;
+	std::pair<int, int> GetPos() const noexcept;
 	int GetPosX() const noexcept;
 	int GetPosY() const noexcept;
+	bool IsInWindow() const noexcept;
 	bool LeftIsPressed() const noexcept;
 	bool RightIsPressed() const noexcept;
 	Mouse::Event Read() noexcept;
@@ -66,13 +71,15 @@ public:
 	}
 	void Clear() noexcept;
 private:
-	void OnMouseMove(int x, int y) noexcept;
+	void OnMouseMove(int newX, int newY) noexcept;
+	void OnMouseLeave() noexcept;
+	void OnMouseEnter() noexcept;
 	void OnLeftPressed(int x, int y) noexcept;
 	void OnLeftReleased(int x, int y) noexcept;
 	void OnRightPressed(int x, int y) noexcept;
 	void OnRightReleased(int x, int y) noexcept;
 	void OnWheelUp(int x, int y) noexcept;
-	void OnWheelDOwn(int x, int y) noexcept;
+	void OnWheelDown(int x, int y) noexcept;
 	void TrimBuffer() noexcept;
 private:
 	static constexpr unsigned int bufferSize = 16u;
@@ -80,5 +87,6 @@ private:
 	int y;
 	bool leftIsPressed = false;
 	bool rightIsPressed = false;
+	bool isInWindow = false;
 	std::queue<Event> buffer;
 };
