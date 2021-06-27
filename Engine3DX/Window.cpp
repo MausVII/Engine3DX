@@ -1,4 +1,6 @@
 #include "Window.h"
+#include <sstream>
+#include "resource.h"
 
 Window::WindowClass Window::WindowClass::wndClass;
 
@@ -13,12 +15,12 @@ Window::WindowClass::WindowClass() noexcept
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = GetInstance();
-    wc.hIcon = nullptr;
+    wc.hIcon = static_cast<HICON>(LoadImage(hInst, MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 128, 128, 0));
     wc.hCursor = nullptr;
     wc.hbrBackground = nullptr;
     wc.lpszMenuName = nullptr;
     wc.lpszClassName = GetName();
-    wc.hIconSm = nullptr;
+    wc.hIconSm = static_cast<HICON>(LoadImage(hInst, MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 128, 128, 0));
     RegisterClassEx(&wc);
 }
 
@@ -37,23 +39,30 @@ Window::WindowClass::~WindowClass()
     UnregisterClass(wndClassName, GetInstance());
 }
 
-Window::Window(int width, int height, const char* name) noexcept
+Window::Window(int width, int height, const char* name) 
 {
-    // calculate window size based on desired client region size
+    // Calculate window size based on client region size
     RECT wr;
     wr.left = 100;
     wr.right = width + wr.left;
     wr.top = 100;
     wr.bottom = height + wr.top;
+    if (FAILED(AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE))) {
+        throw CHWND_LAST_EXCEPT();
+    }
     AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE);
-    // create window & get hWnd
+    // Create window & get hWnd
     hWnd = CreateWindow(
         WindowClass::GetName(), name,
         WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
         CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top,
         nullptr, nullptr, WindowClass::GetInstance(), this
     );
-    // show window
+    // If error when making window
+    if (hWnd == nullptr) {
+        throw CHWND_LAST_EXCEPT();
+    }
+    // Show window
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 }
 
@@ -99,3 +108,62 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 
     return DefWindowProc(hWnd, msg, wParam, lParam);
 }
+
+// Exception related ///////////////////////////////////////////////////////////////
+
+Window::Exception::Exception(int line, const char* file, HRESULT hr) noexcept
+    :
+    WinExcept( line, file),
+    hr(hr)
+{
+}
+
+const char* Window::Exception::what() const noexcept
+{
+    std::ostringstream oss;
+    oss << GetType() << std::endl
+        << "[Error Code] " << GetErrorCode() << std::endl
+        << "[Description] " << GetErrorString() << std::endl
+        << GetOriginString();
+    whatBuffer = oss.str();
+    return whatBuffer.c_str();
+}
+
+const char* Window::Exception::GetType() const noexcept
+{
+    return "Engine 3DX Window Exception";
+}
+
+std::string Window::Exception::TranslateErrorCode(HRESULT hr) noexcept
+{
+    char* pMsgBuffer = nullptr;
+    // Windows will allocate memory for error string and make a pointer for it
+    DWORD nMsgLen = FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        reinterpret_cast<LPSTR>(&pMsgBuffer), 0, nullptr
+    );
+
+    // Lenghtless string indicates a failure
+    if (nMsgLen == 0) {
+        return "Unindentifeid error code";
+    }
+
+    // Copy error string from windows-allocated buffer to std::string
+    std::string errorString = pMsgBuffer;
+    // Free buffer
+    LocalFree(pMsgBuffer);
+    return errorString;
+}
+
+HRESULT Window::Exception::GetErrorCode() const noexcept
+{
+    return hr;
+}
+
+std::string Window::Exception::GetErrorString() const noexcept
+{
+    return TranslateErrorCode(hr);
+}
+
+//////////////////////////////////////////////////////////////////
