@@ -16,11 +16,23 @@ public:
 		Type type;
 		unsigned char code;
 	public:
-		Event() : type(Type::Invalid), code(0u)
+		Event() noexcept : type(Type::Invalid), code(0u)
 		{}
 		Event(Type type, unsigned char code) noexcept 
 			: type(type), code(code)
 		{}
+		bool IsPress() const noexcept {
+			return type == Type::Press;
+		}
+		bool isRelease() const noexcept {
+			return type == Type::Release;
+		}
+		bool isValid() const noexcept {
+			return type != Type::Invalid;
+		}
+		unsigned char GetCode() const noexcept {
+			return code;
+		}
 	};
 public:
 	Keyboard() = default;
@@ -60,3 +72,11 @@ private:
 	std::queue<char> charBuffer;
 
 };
+
+template<typename T>
+inline void Keyboard::TrimBuffer(std::queue<T>& buffer) noexcept
+{
+	while (buffer.size() > bufferSize) {
+		buffer.pop();
+	}
+}

@@ -18,6 +18,10 @@ int CALLBACK WinMain(
 			// Translate message posts auxilliary WM_CHAR messages from the key msgs
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+
+			if (wnd.kbd.KeyIsPressed(VK_SPACE)) {
+				MessageBox(nullptr, "The Keyboard is working!", "The Space key was pressed.", MB_OK | MB_ICONEXCLAMATION);
+			}
 		}
 
 		if (gResult == -1) {

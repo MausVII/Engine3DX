@@ -105,6 +105,27 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
         PostQuitMessage(0);
         // Call OUR destructor, don't destroy window twice
         return 0;
+        // Handle Zombie key pressed when window is out of focus. "Send the key releseased message that was mistakingly sent to 
+        // whatever took focus away."
+    case WM_KILLFOCUS:
+        kbd.ClearState();
+        break;
+        // Keybord related messages //////////////////////
+    case WM_KEYDOWN:
+        // Syskeydown needs to be handled here to track ALT (VK_MENU) key which is not part of KEYDOWN :^ ). 
+    case WM_SYSKEYDOWN:
+        if (!(lParam & 0x40000000) || kbd.AutorepeatIsEnabled()) {
+            kbd.OnKeyPressed(static_cast<unsigned char>(wParam));
+        }
+        break;
+    case WM_KEYUP:
+        // Syskeyup needs to be handled here to track ALT key. 
+    case WM_SYSKEYUP:
+        kbd.OnKeyReleased(static_cast<unsigned char>(wParam));
+        break;
+    case WM_CHAR:
+        kbd.OnChar(static_cast<unsigned char>(wParam));
+        break;
     }
 
     return DefWindowProc(hWnd, msg, wParam, lParam);
