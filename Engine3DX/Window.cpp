@@ -4,6 +4,7 @@
 
 Window::WindowClass Window::WindowClass::wndClass;
 
+
 Window::WindowClass::WindowClass() noexcept
     :
     hInst(GetModuleHandle(nullptr))
@@ -16,7 +17,7 @@ Window::WindowClass::WindowClass() noexcept
     wc.cbWndExtra = 0;
     wc.hInstance = GetInstance();
     wc.hIcon = static_cast<HICON>(LoadImage(hInst, MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 128, 128, 0));
-    wc.hCursor = nullptr;
+    wc.hCursor = static_cast<HCURSOR>(LoadImage(hInst, MAKEINTRESOURCE(IDI_ICON2), IMAGE_CURSOR, 32, 32, 0));
     wc.hbrBackground = nullptr;
     wc.lpszMenuName = nullptr;
     wc.lpszClassName = GetName();

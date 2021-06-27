@@ -154,6 +154,7 @@
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Keyboard.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SafeWin.h" />
     <ClInclude Include="Window.h" />
@@ -164,6 +165,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="rubik_s_cube_side_2.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Nier_Normal-Select.cur" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
