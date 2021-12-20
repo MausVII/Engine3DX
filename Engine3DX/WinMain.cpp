@@ -1,6 +1,4 @@
-#include "Window.h"
-#include "WinExcept.h"
-#include <sstream>
+#include "App.h"
 
 int CALLBACK WinMain(
 	HINSTANCE hInstance,
@@ -11,32 +9,9 @@ int CALLBACK WinMain(
 
 {
 	try {
-		Window wnd(1280, 720, "The Window");
-
-		MSG msg;
-		BOOL gResult;
-		while ((gResult = GetMessage(&msg, nullptr, 0, 0)) > 0) {
-			// Translate message posts auxilliary WM_CHAR messages from the key msgs
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-
-			while (!wnd.mouse.IsEmpty()) {
-				const auto e = wnd.mouse.Read();
-				if (e.GetType() == Mouse::Event::Type::Move) {
-					std::ostringstream oss;
-					oss << "Mouse Position: (" << e.GetPosX() << ", " << e.GetPosY() << ")";
-					wnd.SetTitle(oss.str());
-				}
-			}
-		}
-
-		if (gResult == -1) {
-			return -1;
-		}
-
-		return msg.wParam;
+		return App{}.Go();
 	}
-	catch (const WinExcept& e){
+	catch (const WinExcept& e) {
 		MessageBox(nullptr, e.what(), e.GetType(), MB_OK | MB_ICONEXCLAMATION);
 	}
 	catch (const std::exception& e) {
@@ -46,5 +21,4 @@ int CALLBACK WinMain(
 		MessageBox(nullptr, "No details available", "Unknown exception", MB_OK | MB_ICONEXCLAMATION);
 	}
 	return -1;
-
 }

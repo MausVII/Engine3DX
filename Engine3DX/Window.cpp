@@ -43,7 +43,7 @@ Window::WindowClass::~WindowClass()
 Window::Window(int width, int height, const char* name) 
     : width(width), height(height)
 {
-    // Calculate window size based on client region size
+    // Calculate window size based on client region size and adjust for the title
     RECT wr;
     wr.left = 100;
     wr.right = width + wr.left;
@@ -59,14 +59,17 @@ Window::Window(int width, int height, const char* name)
         WindowClass::GetName(), name,
         WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
         CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top,
+        // this is lpCreateParams from tagCREATESTRUCT
         nullptr, nullptr, WindowClass::GetInstance(), this
     );
     // If error when making window
     if (hWnd == nullptr) {
         throw CHWND_LAST_EXCEPT();
     }
-    // Show window
+    // Newly created window starts off hidden
     ShowWindow(hWnd, SW_SHOWDEFAULT);
+    // Create Graphics object now that we have a handle to the window
+    pGfx = std::make_unique<Graphics>(hWnd);
 }
 
 Window::~Window()
@@ -81,6 +84,30 @@ void Window::SetTitle(const std::string title)
     }
 }
 
+std::optional<int> Window::ProcessMessage()
+{
+    MSG msg;
+    // Doesn't block queue to wait for messages like GetMessage
+    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+    {
+        // Check for quit message because PeekMessage does not signal that in the return
+        if(msg.message == WM_QUIT ) {
+            return msg.wParam;
+        }
+
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    // Return an empty optional when not quitting the app
+    return {};
+}
+
+Graphics& Window::Gfx()
+{
+    return *pGfx;
+}
+
 LRESULT WINAPI Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
     // Use Create Parameter from CreateWindow to store Window Class pointer
@@ -92,7 +119,7 @@ LRESULT WINAPI Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
         SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
         // Set message proc to normal handler once setup is finished
         SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&Window::HandleMsgThunk));
-        // Forward message to window class handler
+        // Forward message to regular handler
         return pWnd->HandleMsg(hWnd, msg, wParam, lParam);
     }
     // If we get a message before WM_NCCREATE message, handle with default
@@ -195,6 +222,7 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
     }
     }
 
+    //Don't destroy window in the handler, only in the destructor
     return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
